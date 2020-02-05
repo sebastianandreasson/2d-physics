@@ -29,7 +29,7 @@ export default class Element {
   particleSimulation(world) {
     let { x, y } = this.worldPos
 
-    if (!this.force) {
+    if (this.force <= 0) {
       this.setColor(colors.BLUE)
       this.particle = false
     } else {
@@ -40,10 +40,11 @@ export default class Element {
     if (world[x][y] === types.SPACE) {
       this.object.position.x = x * SIZE
     } else if (world[x][y] === types.GROUND) {
-      this.object.direction = -this.direction
+      this.direction = -this.direction
       this.object.position.x += this.direction * SIZE
     } else {
       this.object.position.x = x * SIZE
+      this.force--
     }
     this.object.position.y -= SIZE
     this.force--

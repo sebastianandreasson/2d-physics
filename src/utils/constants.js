@@ -13,6 +13,7 @@ export const colors = {
   GRAY: 0x434e52,
 }
 
+export const SEED = 1339
 export const WIDTH = window.innerWidth
 export const HEIGHT = window.innerHeight
 export const SIZE = 4

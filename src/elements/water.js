@@ -1,4 +1,3 @@
-import * as THREE from 'three'
 import Element from './index'
 import { SIZE, types, colors } from '../utils/constants'
 

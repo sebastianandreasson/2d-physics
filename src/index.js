@@ -1,26 +1,14 @@
 import * as THREE from 'three'
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils'
-import noise from './utils/noise'
+import World from './world'
 import Water from './elements/water'
 import Solid from './elements/solid'
-import {
-  types,
-  colors,
-  WIDTH,
-  HEIGHT,
-  SIZE,
-  INC,
-  WEIGHT,
-  GRID_WIDTH,
-  GRID_HEIGHT,
-  BASELINE,
-} from './utils/constants'
+import { types, colors, WIDTH, HEIGHT, SIZE } from './utils/constants'
 
 let keys = {
   shift: false,
 }
+let world
 let objects = []
-let grid = {}
 let scene, camera, renderer
 
 const setupScene = () => {
@@ -50,52 +38,20 @@ const setupScene = () => {
 }
 
 const setupWorld = () => {
-  noise.seed(1339)
-  let xoff = 0
-  let yoff = 0
-  const geometry = new THREE.PlaneBufferGeometry(SIZE, SIZE)
-  const geometries = []
-
-  const startX = GRID_WIDTH * SIZE > WIDTH ? Math.floor(-GRID_WIDTH / 2) : 0
-  const endX =
-    GRID_WIDTH * SIZE > WIDTH ? Math.floor(GRID_WIDTH / 2) : GRID_WIDTH
-  for (let x = startX; x < endX; x++) {
-    const startY = BASELINE + WEIGHT * noise.simplex2(xoff, yoff)
-    grid[x] = {}
-    for (let y = GRID_HEIGHT; y > 0; y--) {
-      if (y < startY) continue
-      const xMove = 0 // noise.simplex2(xoff, yoff) * WEIGHT
-      const geo = geometry.clone()
-      geo.applyMatrix(
-        new THREE.Matrix4().makeTranslation(
-          x * SIZE + SIZE / 2,
-          y * SIZE + SIZE / 2,
-          0
-        )
-      )
-      geometries.push(geo)
-      grid[x][y] = types.GROUND
-      yoff += INC
-    }
-    xoff += INC
-  }
-
-  const mesh = new THREE.Mesh(
-    BufferGeometryUtils.mergeBufferGeometries(geometries),
-    new THREE.MeshBasicMaterial({
-      color: colors.GREEN,
-      side: THREE.DoubleSide,
-    })
-  )
-  scene.add(mesh)
+  world = new World()
+  world.setGrid()
+  const worldMesh = world.generateMesh()
+  scene.add(worldMesh)
 }
 
 const createWater = (x, y) => {
-  if (grid[x] && grid[x][y]) {
+  if (world.grid[x] && world.grid[x][y]) {
     return
   }
-  for (let i = -5; i < 5; i++) {
-    for (let j = -5; j < 5; j++) {
+
+  const amount = 10
+  for (let i = -amount; i < amount; i++) {
+    for (let j = -amount; j < amount; j++) {
       const water = new Water((x + i) * SIZE, (y + j) * SIZE)
       objects.push(water)
       scene.add(water.object)
@@ -153,7 +109,7 @@ const displaceWater = (x, y) => {
     .forEach(o => {
       const _x = Math.floor(o.x / SIZE)
       const _y = Math.floor(o.y / SIZE)
-      grid[_x][_y] = types.SPACE
+      world.grid[_x][_y] = types.SPACE
       o.makeParticle(4)
     })
 }
@@ -163,9 +119,9 @@ const physics = () => {
     .filter(o => !o.stable)
     .forEach(o => {
       if (o.particle) {
-        return o.particleSimulation(grid)
+        return o.particleSimulation(world.grid)
       }
-      const pos = o.simulate(grid)
+      const pos = o.simulate(world.grid)
       if (pos) {
         switch (o.type) {
           case types.WATER:
