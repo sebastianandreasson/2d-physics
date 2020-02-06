@@ -14,8 +14,17 @@ module.exports = {
       template: 'src/index.html',
     }),
   ],
+  module: {
+    rules: [
+      {
+        test: /\.worker\.js$/,
+        use: { loader: 'worker-loader' },
+      },
+    ],
+  },
   output: {
     filename: '[name].bundle.js',
     path: path.resolve(__dirname, 'dist'),
+    globalObject: 'this',
   },
 }

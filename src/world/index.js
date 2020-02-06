@@ -34,9 +34,16 @@ export default class World {
       const startY = BASELINE + WEIGHT * noise.simplex2(xoff, yoff)
       this.grid[x] = {}
       for (let y = GRID_HEIGHT; y > 0; y--) {
-        if (y < startY) continue
+        if (y < startY) {
+          this.grid[x][y] = {
+            type: types.SPACE,
+          }
+          continue
+        }
         const xMove = 0 // noise.simplex2(xoff, yoff) * WEIGHT
-        this.grid[x][y] = types.GROUND
+        this.grid[x][y] = {
+          type: types.GROUND,
+        }
         yoff += INC
       }
       xoff += INC
@@ -49,15 +56,17 @@ export default class World {
 
     for (let x in this.grid) {
       for (let y in this.grid[x]) {
-        const geo = geometry.clone()
-        geo.applyMatrix(
-          new THREE.Matrix4().makeTranslation(
-            x * SIZE + SIZE / 2,
-            y * SIZE + SIZE / 2,
-            0
+        if (this.grid[x][y].type === types.GROUND) {
+          const geo = geometry.clone()
+          geo.applyMatrix(
+            new THREE.Matrix4().makeTranslation(
+              x * SIZE + SIZE / 2,
+              y * SIZE + SIZE / 2,
+              0
+            )
           )
-        )
-        geometries.push(geo)
+          geometries.push(geo)
+        }
       }
     }
 

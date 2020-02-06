@@ -1,22 +1,45 @@
 import * as THREE from 'three'
 import { SIZE, types, colors } from '../utils/constants'
 
+const standardGeometry = new THREE.PlaneBufferGeometry(SIZE, SIZE)
+
 export default class Element {
-  constructor(x, y, color, scale = 1) {
+  constructor(x, y, color, scale = 1, transparent) {
     const size = SIZE * scale
     this.object = new THREE.Object3D()
-    this.geometry = new THREE.PlaneBufferGeometry(size, size)
-    this.material = new THREE.MeshBasicMaterial({
+    let geometry
+    if (scale === 1) {
+      geometry = standardGeometry.clone()
+    } else {
+      geometry = new THREE.PlaneBufferGeometry(size, size)
+    }
+    new THREE.PointsMaterial({ size: SIZE, sizeAttenuation: false })
+    const material = new THREE.MeshBasicMaterial({
       color,
-      side: THREE.DoubleSide,
+      side: THREE.BackSide,
     })
-    this.mesh = new THREE.Mesh(this.geometry, this.material)
+    material.transparent = transparent
+    this.mesh = new THREE.Mesh(geometry, material)
     this.mesh.castShadow = false
     this.mesh.position.set(size / 2, size / 2, 0)
     this.object.add(this.mesh)
     this.object.position.set(x, y, 0)
+    this.size = scale
 
     this.particle = false
+  }
+
+  get data() {
+    return {
+      id: this.object.uuid,
+      x: this.object.position.x,
+      y: this.object.position.y,
+      type: this.type,
+      direction: this.direction,
+      force: this.force,
+      particle: this.particle,
+      size: this.size,
+    }
   }
 
   makeParticle(force = 2) {
@@ -26,47 +49,8 @@ export default class Element {
     this.force = force + Math.floor(Math.random() * force)
   }
 
-  particleSimulation(world) {
-    let { x, y } = this.worldPos
-
-    if (this.force <= 0) {
-      this.setColor(colors.BLUE)
-      this.particle = false
-    } else {
-      this.setColor(colors.WHITE, 1 - this.force * 0.1)
-    }
-    x = x + this.direction
-    y = y - 1
-    if (world[x][y] === types.SPACE) {
-      this.object.position.x = x * SIZE
-    } else if (world[x][y] === types.GROUND) {
-      this.direction = -this.direction
-      this.object.position.x += this.direction * SIZE
-    } else {
-      this.object.position.x = x * SIZE
-      this.force--
-    }
-    this.object.position.y -= SIZE
-    this.force--
-  }
-
   setColor(color, opacity = 1) {
     this.mesh.material.color.set(color)
     this.mesh.material.opacity = opacity
-  }
-
-  get x() {
-    return this.object.position.x
-  }
-
-  get y() {
-    return this.object.position.y
-  }
-
-  get worldPos() {
-    return {
-      x: Math.floor(this.x / SIZE),
-      y: Math.floor(this.y / SIZE),
-    }
   }
 }

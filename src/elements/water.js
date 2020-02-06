@@ -3,8 +3,7 @@ import { SIZE, types, colors } from '../utils/constants'
 
 export default class Water extends Element {
   constructor(x, y) {
-    super(x, y, colors.BLUE)
-    this.material.transparent = true
+    super(x, y, colors.BLUE, 1, true)
     this.type = types.WATER
     return this
   }
