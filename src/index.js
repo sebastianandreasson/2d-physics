@@ -76,7 +76,7 @@ const createWater = (x, y) => {
 }
 
 const createSolid = (x, y) => {
-  const solid = new Solid(x * SIZE, y * SIZE)
+  const solid = new Solid(x * SIZE, y * SIZE, 10)
   physicsWorker.postMessage({
     cmd: messages.OBJECT_CREATE,
     payload: solid.data,

@@ -1,9 +1,8 @@
 export const types = {
   SPACE: 0,
-  GROUND: 1,
-  WATER: 2,
-  SOLID: 3,
-  PARTICLE: 10,
+  WATER: 1,
+  GROUND: 10,
+  SOLID: 11,
 }
 export const colors = {
   WHITE: 0xffffff,
@@ -24,6 +23,7 @@ export const simulation = {
   FIXED_TIMESTEP: 1 / 60,
   MAX_STEPS: 1,
   REPORT_CHUNK_SIZE: 3,
+  SINGLE_STEP: false,
 }
 
 // big

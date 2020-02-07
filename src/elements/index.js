@@ -36,6 +36,7 @@ export default class Element {
       id: this.id,
       x: this.object.position.x,
       y: this.object.position.y,
+      rotation: this.object.rotation.x,
       type: this.type,
       direction: this.direction,
       force: this.force,

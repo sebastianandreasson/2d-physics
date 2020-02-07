@@ -6,6 +6,7 @@ let lastUpdate
 let lastDuration
 let simulating = false
 let creating = false
+let lastSubStep
 
 const init = sharedBuffer => {
   buffer = sharedBuffer
@@ -62,9 +63,7 @@ const simulateParticle = o => {
   }
   x = x + o.direction
   y = y - 1
-  if (world[x][y].type === types.SPACE) {
-    o.x++
-  } else if (world[x][y].type === types.GROUND) {
+  if (world[x][y].type >= types.GROUND) {
     o.direction = -o.direction
   }
   o.x += o.direction
@@ -75,17 +74,21 @@ const simulateParticle = o => {
 const simulateSolid = o => {
   const { x, y } = o
 
-  if (
-    world[x][y + o.size].type !== types.GROUND &&
-    world[x][y + o.size].type !== types.SOLID
-  ) {
+  let collision = false
+  for (let i = 0; i < o.size; i++) {
+    const _type = world[x + i][y + o.size].type
+    if (_type >= types.GROUND) {
+      collision = true
+    }
+  }
+  if (!collision) {
     o.y++
     for (let i = 0; i < o.size; i++) {
       world[x + i][y] = { type: types.SPACE }
-      if (world[x + i][y + 1].type === types.WATER) {
-        displaceWater(x + i, y + 1, 4)
+      if (world[x + i][y + o.size].type === types.WATER) {
+        displaceWater(x + i, y + o.size, o.size)
       }
-      world[x + i][y + 1] = { type: types.SOLID, id: o.id }
+      world[x + i][y + o.size] = { type: types.SOLID, id: o.id }
     }
   }
 }
@@ -117,16 +120,14 @@ const simulateWater = o => {
   }
 }
 
-const simulate = (steps, events = []) => {
+const simulate = (steps, substep) => {
   if (steps === 0) {
     return
   }
-  for (let id in cache) {
-    const obj = cache[id]
-    if (obj.particle) {
-      simulateParticle(obj)
-      continue
-    }
+  const obj = cache[substep]
+  if (obj && obj.particle) {
+    simulateParticle(obj)
+  } else if (obj) {
     switch (obj.type) {
       case types.WATER:
         simulateWater(obj)
@@ -137,7 +138,14 @@ const simulate = (steps, events = []) => {
         break
     }
   }
-  return simulate(steps - 1)
+  if (simulation.SINGLE_STEP) {
+    lastSubStep = substep <= 1 ? Object.keys(cache).length : substep - 1
+    return
+  }
+  return simulate(
+    substep <= 1 ? steps - 1 : steps,
+    substep <= 1 ? Object.keys(cache).length : substep - 1
+  )
 }
 
 const report = () => {
@@ -181,7 +189,12 @@ const startSimulation = () => {
   )
   lastDuration = Date.now()
 
-  simulate(steps)
+  simulate(
+    steps,
+    simulation.SINGLE_STEP && lastSubStep
+      ? lastSubStep
+      : Object.keys(cache).length
+  )
 
   report()
 
