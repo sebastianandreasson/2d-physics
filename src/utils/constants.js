@@ -13,6 +13,7 @@ export const colors = {
   GRAY: 0x434e52,
 }
 export const messages = {
+  INIT: 'init',
   INIT_WORLD: 'init-world',
   OBJECT_CREATE: 'object-create',
   OBJECT_UPDATE: 'object-update',
@@ -20,16 +21,29 @@ export const messages = {
   WORLD: 'world',
 }
 export const simulation = {
-  fixedTimeStep: 1 / 60,
-  maxSteps: 1,
+  FIXED_TIMESTEP: 1 / 60,
+  MAX_STEPS: 1,
+  REPORT_CHUNK_SIZE: 3,
 }
 
+// big
+// export const SEED = 1339
+// export const WIDTH = self.innerWidth
+// export const HEIGHT = self.innerHeight
+// export const SIZE = 10
+// export const INC = 0.0025
+// export const WEIGHT = 15
+// export const GRID_WIDTH = Math.floor(WIDTH / SIZE) * 4
+// export const GRID_HEIGHT = Math.floor(HEIGHT / SIZE)
+// export const BASELINE = Math.floor(GRID_HEIGHT * 0.65)
+
+// small
 export const SEED = 1339
 export const WIDTH = self.innerWidth
 export const HEIGHT = self.innerHeight
-export const SIZE = 6
-export const INC = 0.0005
-export const WEIGHT = 25
+export const SIZE = 4
+export const INC = 0.00025
+export const WEIGHT = 50
 export const GRID_WIDTH = Math.floor(WIDTH / SIZE) * 4
 export const GRID_HEIGHT = Math.floor(HEIGHT / SIZE)
 export const BASELINE = Math.floor(GRID_HEIGHT * 0.65)

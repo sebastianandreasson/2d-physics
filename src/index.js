@@ -3,7 +3,15 @@ import World from './world'
 import Water from './elements/water'
 import Solid from './elements/solid'
 import PhysicsWorker from 'worker-loader!./workers/physics.js'
-import { types, colors, WIDTH, HEIGHT, SIZE, messages } from './utils/constants'
+import {
+  types,
+  colors,
+  WIDTH,
+  HEIGHT,
+  SIZE,
+  messages,
+  simulation,
+} from './utils/constants'
 
 let keys = {
   shift: false,
@@ -11,6 +19,10 @@ let keys = {
 let world
 let objects = {}
 let scene, camera, renderer
+
+const physicsWorker = new PhysicsWorker()
+const buffer = new ArrayBuffer(1)
+// physicsWorker.postMessage(buffer, [buffer])
 
 const setupScene = () => {
   scene = new THREE.Scene()
@@ -47,16 +59,12 @@ const setupWorld = () => {
 }
 
 const createWater = (x, y) => {
-  // if (world.grid[x] && world.grid[x][y]) {
-  //   return
-  // }
-
   const chunk = []
-  const amount = 4
+  const amount = 5
   for (let i = -amount; i < amount; i++) {
     for (let j = -amount; j < amount; j++) {
       const water = new Water((x + i) * SIZE, (y + j) * SIZE)
-      objects[water.object.uuid] = water
+      objects[water.id] = water
       scene.add(water.object)
       chunk.push(water.data)
     }
@@ -73,7 +81,7 @@ const createSolid = (x, y) => {
     cmd: messages.OBJECT_CREATE,
     payload: solid.data,
   })
-  objects[solid.object.uuid] = solid
+  objects[solid.id] = solid
   scene.add(solid.object)
 }
 
@@ -109,28 +117,19 @@ const onKey = ({ which }, down) => {
   }
 }
 
-const updateScene = vectors => {
-  vectors.forEach(({ id, pos, event }) => {
-    objects[id].object.position.set(pos[0], pos[1], 0)
-    if (event) {
-      objects[id][event[0]](event[1], event[2])
-    }
-  })
-}
+const updateScene = arr => {
+  let offset = 1
+  for (let i = 0; i < arr[0]; i++) {
+    const id = arr[offset]
+    const x = arr[offset + 1]
+    const y = arr[offset + 2]
+    objects[id].object.position.set(x, y, 0)
 
-const physicsWorker = new PhysicsWorker()
-
-physicsWorker.onmessage = event => {
-  const { cmd, payload } = event.data
-  switch (cmd) {
-    case messages.WORLD:
-      updateScene(payload)
-      break
-
-    default:
-      break
+    offset += simulation.REPORT_CHUNK_SIZE
   }
 }
+
+physicsWorker.onmessage = ({ data }) => updateScene(data)
 
 function draw() {
   requestAnimationFrame(draw)

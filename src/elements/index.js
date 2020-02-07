@@ -1,10 +1,12 @@
 import * as THREE from 'three'
 import { SIZE, types, colors } from '../utils/constants'
+import { getId } from '../utils/globals'
 
 const standardGeometry = new THREE.PlaneBufferGeometry(SIZE, SIZE)
 
 export default class Element {
   constructor(x, y, color, scale = 1, transparent) {
+    this.id = getId()
     const size = SIZE * scale
     this.object = new THREE.Object3D()
     let geometry
@@ -31,7 +33,7 @@ export default class Element {
 
   get data() {
     return {
-      id: this.object.uuid,
+      id: this.id,
       x: this.object.position.x,
       y: this.object.position.y,
       type: this.type,
@@ -51,6 +53,7 @@ export default class Element {
 
   setColor(color, opacity = 1) {
     this.mesh.material.color.set(color)
+    this.object.renderOrder = 1
     this.mesh.material.opacity = opacity
   }
 }

@@ -7,7 +7,10 @@ let lastDuration
 let simulating = false
 let creating = false
 
-const init = grid => {
+const init = sharedBuffer => {
+  buffer = sharedBuffer
+}
+const initWorld = grid => {
   world = grid
 }
 
@@ -55,22 +58,16 @@ const simulateParticle = o => {
   let { x, y } = o
 
   if (o.force <= 0) {
-    o.event = ['setColor', colors.BLUE]
     o.particle = false
-  } else {
-    o.event = ['setColor', colors.WHITE, 1 - o.force * 0.1]
   }
   x = x + o.direction
   y = y - 1
-  if (world[x][y] === types.SPACE) {
+  if (world[x][y].type === types.SPACE) {
     o.x++
-  } else if (world[x][y] === types.GROUND) {
+  } else if (world[x][y].type === types.GROUND) {
     o.direction = -o.direction
-    o.x += o.direction * SIZE
-  } else {
-    o.x++
-    o.force--
   }
+  o.x += o.direction
   o.y--
   o.force--
 }
@@ -144,19 +141,24 @@ const simulate = (steps, events = []) => {
 }
 
 const report = () => {
-  const vectors = []
+  const length = Object.keys(cache).length
+  const data = new Uint16Array(1 + simulation.REPORT_CHUNK_SIZE * length)
+  data[0] = length
+
+  let offset = 1
   for (let id in cache) {
     const obj = cache[id]
-    const event = obj.event
-    delete obj.event
-    vectors.push({
-      id: obj.id,
-      pos: [obj.x * SIZE, obj.y * SIZE],
-      event,
-    })
-  }
 
-  postMessage({ cmd: messages.WORLD, payload: vectors })
+    // const event = obj.event
+    delete obj.event
+
+    data[offset] = obj.id
+    data[offset + 1] = obj.x * SIZE
+    data[offset + 2] = obj.y * SIZE
+
+    offset += simulation.REPORT_CHUNK_SIZE
+  }
+  postMessage(data)
 }
 
 const startSimulation = () => {
@@ -166,16 +168,16 @@ const startSimulation = () => {
   simulating = true
   let timeStep = 0
   if (lastUpdate) {
-    while (timeStep + lastDuration <= simulation.fixedTimeStep) {
+    while (timeStep + lastDuration <= simulation.FIXED_TIMESTEP) {
       timeStep = (Date.now() - lastUpdate) / 1000
     }
   } else {
-    timeStep = simulation.fixedTimeStep
+    timeStep = simulation.FIXED_TIMESTEP
   }
 
-  let steps = Math.max(
-    Math.ceil(timeStep / simulation.fixedTimeStep),
-    simulation.maxSteps
+  let steps = Math.min(
+    Math.ceil(timeStep / simulation.FIXED_TIMESTEP),
+    simulation.MAX_STEPS
   )
   lastDuration = Date.now()
 
@@ -189,16 +191,19 @@ const startSimulation = () => {
   simulating = false
 }
 
-self.addEventListener('message', event => {
-  const { cmd, payload } = event.data
+self.addEventListener('message', ({ data }) => {
+  const { cmd, payload } = data
   switch (cmd) {
-    case messages.INIT_WORLD:
+    case messages.INIT:
       init(payload)
+      break
+    case messages.INIT_WORLD:
+      initWorld(payload)
       break
     case messages.OBJECT_CREATE:
       creating = true
       if (payload.length) {
-        payload.forEach(obj => createObject(obj))
+        payload.reverse().forEach(obj => createObject(obj))
       } else {
         createObject(payload)
       }
