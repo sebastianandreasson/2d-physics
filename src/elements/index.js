@@ -1,31 +1,19 @@
-import * as THREE from 'three'
+import * as PIXI from 'pixi.js'
 import { SIZE, types, colors } from '../utils/constants'
 import { getId } from '../utils/globals'
-
-const standardGeometry = new THREE.PlaneBufferGeometry(SIZE, SIZE)
 
 export default class Element {
   constructor(x, y, color, scale = 1, transparent) {
     this.id = getId()
     const size = SIZE * scale
-    this.object = new THREE.Object3D()
-    let geometry
-    if (scale === 1) {
-      geometry = standardGeometry.clone()
-    } else {
-      geometry = new THREE.PlaneBufferGeometry(size, size)
-    }
-    new THREE.PointsMaterial({ size: SIZE, sizeAttenuation: false })
-    const material = new THREE.MeshBasicMaterial({
-      color,
-      side: THREE.BackSide,
-    })
-    material.transparent = transparent
-    this.mesh = new THREE.Mesh(geometry, material)
-    this.mesh.castShadow = false
-    this.mesh.position.set(size / 2, size / 2, 0)
-    this.object.add(this.mesh)
-    this.object.position.set(x, y, 0)
+    const object = new PIXI.Sprite(PIXI.Texture.WHITE)
+
+    object.tint = color
+    object.x = x
+    object.y = y
+    object.width = size
+    object.height = size
+    this.object = object
     this.size = scale
 
     this.particle = false

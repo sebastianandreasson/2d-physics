@@ -1,5 +1,4 @@
-import * as THREE from 'three'
-import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils'
+import * as PIXI from 'pixi.js'
 import noise from '../utils/noise'
 import {
   types,
@@ -50,32 +49,25 @@ export default class World {
     }
   }
 
-  generateMesh() {
-    const geometry = new THREE.PlaneBufferGeometry(SIZE, SIZE)
-    const geometries = []
+  generateContainer() {
+    const container = new PIXI.Container()
 
     for (let x in this.grid) {
       for (let y in this.grid[x]) {
         if (this.grid[x][y].type === types.GROUND) {
-          const geo = geometry.clone()
-          geo.applyMatrix(
-            new THREE.Matrix4().makeTranslation(
-              x * SIZE + SIZE / 2,
-              y * SIZE + SIZE / 2,
-              0
-            )
-          )
-          geometries.push(geo)
+          const sprite = new PIXI.Sprite(PIXI.Texture.WHITE)
+          sprite.tint = colors.GREEN
+          sprite.x = x * SIZE
+          sprite.y = y * SIZE
+          sprite.width = SIZE
+          sprite.height = SIZE
+
+          container.addChild(sprite)
         }
       }
     }
+    container.cacheAsBitmap = true
 
-    return new THREE.Mesh(
-      BufferGeometryUtils.mergeBufferGeometries(geometries),
-      new THREE.MeshBasicMaterial({
-        color: colors.GREEN,
-        side: THREE.DoubleSide,
-      })
-    )
+    return container
   }
 }
