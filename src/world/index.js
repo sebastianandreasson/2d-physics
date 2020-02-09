@@ -6,6 +6,7 @@ import {
   SEED,
   SIZE,
   WIDTH,
+  HEIGHT,
   WEIGHT,
   GRID_WIDTH,
   GRID_HEIGHT,
@@ -49,13 +50,28 @@ export default class World {
     }
   }
 
+  // gridChunk() {
+  //   const grid = {}
+
+  //   for (let x in this.grid) {
+  //     if ()
+  //     for (let y in this.grid[x]) {
+  //     }
+  //   }
+  // }
+
   generateContainer() {
     const container = new PIXI.Container()
+    // container.x = (WIDTH - WIDTH / 2) / 2
+    // container.y = (HEIGHT - HEIGHT / 2) / 2
+    // container.width = GRID_WIDTH * SIZE
+    // container.height = GRID_HEIGHT * SIZE
+    const texture = PIXI.Texture.WHITE
 
     for (let x in this.grid) {
       for (let y in this.grid[x]) {
         if (this.grid[x][y].type === types.GROUND) {
-          const sprite = new PIXI.Sprite(PIXI.Texture.WHITE)
+          const sprite = new PIXI.Sprite(texture)
           sprite.tint = colors.GREEN
           sprite.x = x * SIZE
           sprite.y = y * SIZE
@@ -66,6 +82,14 @@ export default class World {
         }
       }
     }
+
+    // const outline = new PIXI.Graphics()
+    // outline.lineStyle(2, colors.RED, 1)
+    // outline.drawRect(0, 0, container.width, container.height)
+    // outline.endFill()
+    // container.addChild(outline)
+
+    container.interactiveChildren = false
     container.cacheAsBitmap = true
 
     return container

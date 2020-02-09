@@ -10,6 +10,7 @@ export const colors = {
   BLUE: 0x4f98ca,
   GREEN: 0x21bf73,
   GRAY: 0x434e52,
+  RED: 0xff0000,
 }
 export const messages = {
   INIT: 'init',
@@ -21,8 +22,8 @@ export const messages = {
 }
 export const simulation = {
   FIXED_TIMESTEP: 1 / 60,
-  MAX_STEPS: 1,
-  REPORT_CHUNK_SIZE: 3,
+  MAX_STEPS: 10,
+  REPORT_CHUNK_SIZE: 4,
   SINGLE_STEP: false,
 }
 
@@ -41,9 +42,9 @@ export const simulation = {
 export const SEED = 1339
 export const WIDTH = self.innerWidth
 export const HEIGHT = self.innerHeight
-export const SIZE = 4
+export const SIZE = 5
 export const INC = 0.00025
 export const WEIGHT = 50
-export const GRID_WIDTH = Math.floor(WIDTH / SIZE) * 4
+export const GRID_WIDTH = Math.floor(WIDTH / SIZE)
 export const GRID_HEIGHT = Math.floor(HEIGHT / SIZE)
 export const BASELINE = Math.floor(GRID_HEIGHT * 0.65)

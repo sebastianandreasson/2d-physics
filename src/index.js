@@ -22,6 +22,7 @@ let objects = {}
 let app
 
 const physicsWorker = new PhysicsWorker()
+const elementsContainer = new PIXI.ParticleContainer(25000, { tint: true })
 
 const setupScene = () => {
   app = new PIXI.Application()
@@ -42,6 +43,15 @@ const setupScene = () => {
   }
   const space = keyboard(' ')
   space.press = () => physicsWorker.postMessage({ cmd: messages.SIMULATE })
+
+  const left = keyboard('ArrowLeft')
+  left.press = () => {
+    app.stage.x -= 10
+  }
+  const right = keyboard('ArrowRight')
+  right.press = () => {
+    app.stage.x += 10
+  }
 }
 
 const setupWorld = () => {
@@ -49,18 +59,25 @@ const setupWorld = () => {
   world.setGrid()
   const worldContainer = world.generateContainer(app.stage)
   app.stage.addChild(worldContainer)
+  app.stage.addChild(elementsContainer)
   physicsWorker.postMessage({ cmd: messages.INIT_WORLD, payload: world.grid })
 }
 
 const createWater = (x, y) => {
   const chunk = []
-  const amount = 8
-  for (let i = -amount; i < amount; i++) {
-    for (let j = -amount; j < amount; j++) {
-      const water = new Water((x + i) * SIZE, (y + j) * SIZE)
-      objects[water.id] = water
-      app.stage.addChild(water.object)
-      chunk.push(water.data)
+  const amount = 25
+  for (let i = 0; i < amount; i++) {
+    for (let j = 0; j < amount; j++) {
+      var inCircle =
+        (i - amount / 2) * (i - amount / 2) +
+          (j - amount / 2) * (j - amount / 2) <=
+        (amount / 2) * (amount / 2)
+      if (inCircle) {
+        const water = new Water((x + i) * SIZE, (y + j) * SIZE)
+        objects[water.id] = water
+        elementsContainer.addChild(water.sprite)
+        chunk.push(water.data)
+      }
     }
   }
   physicsWorker.postMessage({
@@ -76,7 +93,7 @@ const createSolid = (x, y) => {
     payload: solid.data,
   })
   objects[solid.id] = solid
-  app.stage.addChild(solid.object)
+  elementsContainer.addChild(solid.sprite)
 }
 
 const onClick = event => {
@@ -98,9 +115,17 @@ const updateScene = arr => {
   let offset = 1
   for (let i = 0; i < arr[0]; i++) {
     const id = arr[offset]
+    const obj = objects[id]
     const x = arr[offset + 1]
     const y = arr[offset + 2]
-    objects[id].object.position.set(x, y, 0)
+    obj.sprite.position.set(x, y, 0)
+    const alpha = arr[offset + 3]
+    if (alpha === 10) {
+      obj.sprite.tint = obj.color
+    } else {
+      obj.sprite.tint = colors.WHITE
+    }
+    obj.sprite.alpha = arr[offset + 3] / 10
 
     offset += simulation.REPORT_CHUNK_SIZE
   }

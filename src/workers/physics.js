@@ -21,6 +21,7 @@ const createObject = obj => {
   cache[obj.id] = {
     ...obj,
     ...{ x, y },
+    velocity: 0,
   }
   if (obj.size === 1) {
     world[x][y] = {
@@ -50,9 +51,9 @@ const displaceWater = (x, y, force = 2) => {
   const o = cache[id]
 
   o.particle = true
-  o.event = ['setColor', colors.WHITE]
   o.direction = Math.random() > 0.5 ? 1 : -1
   o.force = force + Math.floor(Math.random() * force)
+  o.alpha = 1 - force
 }
 
 const simulateParticle = o => {
@@ -60,6 +61,9 @@ const simulateParticle = o => {
 
   if (o.force <= 0) {
     o.particle = false
+    o.alpha = 10
+  } else {
+    o.alpha = 10 - o.force
   }
   x = x + o.direction
   y = y - 1
@@ -118,13 +122,22 @@ const simulateWater = o => {
     world[x][y] = { type: types.SPACE }
     world[x - 1][y] = { type: types.WATER, id: o.id }
   }
+  if (
+    o.velocity > 0 &&
+    Math.abs(o.y - y) === 0 &&
+    !world[x][y - 1].type &&
+    world[x][y + 1].type === types.WATER
+  ) {
+    o.alpha = 5
+  } else {
+    o.alpha = 10
+  }
+
+  o.velocity = Math.abs(o.y - y)
 }
 
-const simulate = (steps, substep) => {
-  if (steps === 0) {
-    return
-  }
-  const obj = cache[substep]
+const simulateElement = id => {
+  const obj = cache[id]
   if (obj && obj.particle) {
     simulateParticle(obj)
   } else if (obj) {
@@ -138,6 +151,13 @@ const simulate = (steps, substep) => {
         break
     }
   }
+}
+
+const simulateDebug = (steps, substep) => {
+  if (steps === 0) {
+    return
+  }
+  simulateElement(substep)
   if (simulation.SINGLE_STEP) {
     lastSubStep = substep <= 1 ? Object.keys(cache).length : substep - 1
     return
@@ -146,6 +166,16 @@ const simulate = (steps, substep) => {
     substep <= 1 ? steps - 1 : steps,
     substep <= 1 ? Object.keys(cache).length : substep - 1
   )
+}
+
+const simulate = steps => {
+  if (steps === 0) {
+    return
+  }
+  for (let id in cache) {
+    simulateElement(id)
+  }
+  simulate(steps - 1)
 }
 
 const report = () => {
@@ -157,12 +187,10 @@ const report = () => {
   for (let id in cache) {
     const obj = cache[id]
 
-    // const event = obj.event
-    delete obj.event
-
     data[offset] = obj.id
     data[offset + 1] = obj.x * SIZE
     data[offset + 2] = obj.y * SIZE
+    data[offset + 3] = obj.alpha
 
     offset += simulation.REPORT_CHUNK_SIZE
   }
@@ -189,12 +217,11 @@ const startSimulation = () => {
   )
   lastDuration = Date.now()
 
-  simulate(
-    steps,
-    simulation.SINGLE_STEP && lastSubStep
-      ? lastSubStep
-      : Object.keys(cache).length
-  )
+  if (simulation.SINGLE_STEP) {
+    simulateDebug(steps, lastSubStep ? lastSubStep : Object.keys(cache).length)
+  } else {
+    simulate(steps)
+  }
 
   report()
 
@@ -221,6 +248,7 @@ self.addEventListener('message', ({ data }) => {
         createObject(payload)
       }
       creating = false
+      console.log('amount', Object.keys(cache).length)
       break
     case messages.OBJECT_UPDATE:
       break
