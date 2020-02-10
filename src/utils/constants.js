@@ -37,11 +37,11 @@ export const simulation = {
   SINGLE_STEP: false,
 }
 export const generation = {
-  HORIZON: 100,
-  STRENGTH: 1.25,
-  BASE_ROUGHNESS: 0.000045,
-  ROUGHNESS: 2.5,
-  LAYERS: 5,
+  HORIZON: 50,
+  STRENGTH: 75,
+  BASE_ROUGHNESS: 0.0001,
+  ROUGHNESS: 3,
+  LAYERS: 4,
   PERSISTENCE: 0.25,
-  MIN_VALUE: 0.1,
+  MIN_VALUE: 1,
 }

@@ -36,9 +36,9 @@ const getElevation = (x, y) => {
     amplitude *= PERSISTENCE
   }
 
-  noiseValue = Math.max(0, noiseValue - MIN_VALUE)
+  // noiseValue = Math.min(0, noiseValue - MIN_VALUE)
 
-  return HORIZON * noiseValue * STRENGTH
+  return HORIZON + noiseValue * STRENGTH
 }
 
 export default class World {
