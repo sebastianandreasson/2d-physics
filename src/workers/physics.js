@@ -113,7 +113,7 @@ const simulateWater = o => {
     o.x++
     world[x][y] = { type: types.SPACE }
     world[x + 1][y + 1] = { type: types.WATER, id: o.id }
-  } else if (!world[x + 1][y].type && Math.random() > 0.2) {
+  } else if (!world[x + 1][y].type) {
     o.x++
     world[x][y] = { type: types.SPACE }
     world[x + 1][y] = { type: types.WATER, id: o.id }

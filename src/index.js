@@ -10,6 +10,7 @@ import {
   WIDTH,
   HEIGHT,
   SIZE,
+  VELOCITY,
   messages,
   simulation,
 } from './utils/constants'
@@ -28,6 +29,7 @@ const setupScene = () => {
   app = new PIXI.Application()
   app.renderer.backgroundColor = colors.SKY
   app.renderer.resize(WIDTH, HEIGHT)
+  app.stage.vx = 0
   document.body.appendChild(app.view)
 
   app.ticker.add(draw)
@@ -46,21 +48,38 @@ const setupScene = () => {
 
   const left = keyboard('ArrowLeft')
   left.press = () => {
-    app.stage.x -= 10
+    app.stage.vx = -VELOCITY
+  }
+  left.release = () => {
+    app.stage.vx = 0
   }
   const right = keyboard('ArrowRight')
   right.press = () => {
-    app.stage.x += 10
+    app.stage.vx = VELOCITY
+  }
+  right.release = () => {
+    app.stage.vx = 0
   }
 }
 
 const setupWorld = () => {
   world = new World()
-  world.setGrid()
-  const worldContainer = world.generateContainer(app.stage)
-  app.stage.addChild(worldContainer)
+  for (let i = 0; i < world.parts.length; i++) {
+    const container = world.parts[i].container
+    app.stage.addChild(container)
+  }
+  physicsWorker.postMessage({
+    cmd: messages.INIT_WORLD,
+    payload: world.parts[1].grid,
+  })
   app.stage.addChild(elementsContainer)
-  physicsWorker.postMessage({ cmd: messages.INIT_WORLD, payload: world.grid })
+}
+
+const updateWorld = x => {
+  const part = world.updateOffset(x)
+  if (part) {
+    app.stage.addChild(part.container)
+  }
 }
 
 const createWater = (x, y) => {
@@ -135,6 +154,8 @@ physicsWorker.onmessage = ({ data }) => updateScene(data)
 
 function draw() {
   physicsWorker.postMessage({ cmd: messages.SIMULATE })
+  app.stage.x -= app.stage.vx
+  updateWorld(WIDTH + -app.stage.x)
 }
 setupScene()
 setupWorld()
