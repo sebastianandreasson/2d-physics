@@ -7,27 +7,38 @@ import {
   SIZE,
   WIDTH,
   HEIGHT,
-  WEIGHT,
-  GRID_SPLIT,
-  GRID_WIDTH,
-  GRID_HEIGHT,
-  BASELINE,
-  INC,
+  generation,
 } from '../utils/constants'
 import { withinCircle } from '../utils/calc'
 
-const octavePerlin = (x, y, octaves = 4, persistence = 2) => {
-  let total = 0
-  let frequency = 1
-  let amplitude = 1
-  for (let i = 0; i < octaves; i++) {
-    total += noise.simplex2(x * frequency, y * frequency) * amplitude
+const getElevation = (x, y) => {
+  const {
+    STRENGTH,
+    ROUGHNESS,
+    PERSISTENCE,
+    LAYERS,
+    BASE_ROUGHNESS,
+    HORIZON,
+    MIN_VALUE,
+  } = generation
 
-    amplitude *= persistence
-    frequency *= 2
+  let noiseValue = 0
+  let frequency = BASE_ROUGHNESS
+  let amplitude = 1
+  for (let i = 0; i < LAYERS; i++) {
+    const _x = x * frequency
+    const _y = y * frequency
+    let v = noise.simplex2(_x, _y)
+
+    noiseValue += (v + 1) * 0.5 * amplitude
+
+    frequency *= ROUGHNESS
+    amplitude *= PERSISTENCE
   }
 
-  return total
+  noiseValue = Math.max(0, noiseValue - MIN_VALUE)
+
+  return HORIZON * noiseValue * STRENGTH
 }
 
 export default class World {
@@ -46,11 +57,10 @@ export default class World {
     const startX = width * offset
     const endX = startX + width
     console.log('startX', startX)
-    let xoff = startX * INC
-    let yoff = startX * INC * height
+    let yoff = startX * height
 
     for (let x = startX; x < endX; x++) {
-      const startY = BASELINE + WEIGHT * octavePerlin(xoff, yoff)
+      const startY = getElevation(x, yoff)
       grid[x] = {}
       for (let y = height; y > 0; y--) {
         if (y < startY) {
@@ -62,9 +72,8 @@ export default class World {
             type: types.GROUND,
           }
         }
-        yoff += INC
+        yoff++
       }
-      xoff += INC
     }
 
     return {
