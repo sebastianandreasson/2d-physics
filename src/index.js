@@ -17,6 +17,7 @@ import {
 
 let keys = {
   shift: false,
+  alt: false,
 }
 let world
 let objects = {}
@@ -42,6 +43,13 @@ const setupScene = () => {
   }
   shift.release = () => {
     keys.shift = false
+  }
+  const alt = keyboard('Alt')
+  alt.press = () => {
+    keys.alt = true
+  }
+  alt.release = () => {
+    keys.alt = false
   }
   const space = keyboard(' ')
   space.press = () => physicsWorker.postMessage({ cmd: messages.SIMULATE })
@@ -76,10 +84,10 @@ const setupWorld = () => {
 }
 
 const updateWorld = x => {
-  const part = world.updateOffset(x)
-  if (part) {
-    app.stage.addChild(part.container)
-  }
+  // const part = world.updateOffset(x)
+  // if (part) {
+  //   app.stage.addChild(part.container)
+  // }
 }
 
 const createWater = (x, y) => {
@@ -115,6 +123,19 @@ const createSolid = (x, y) => {
   elementsContainer.addChild(solid.sprite)
 }
 
+const destroyGround = (x, y) => {
+  const radius = 5
+  world.destroy(x, y, radius)
+  physicsWorker.postMessage({
+    cmd: messages.DESTORY,
+    payload: {
+      x,
+      y,
+      radius,
+    },
+  })
+}
+
 const onClick = event => {
   const { x, y } = event.data.global
   console.log('click')
@@ -125,8 +146,10 @@ const onClick = event => {
   console.log('_______')
   if (keys.shift) {
     createSolid(localX, localY)
-  } else {
+  } else if (keys.alt) {
     createWater(localX, localY)
+  } else {
+    destroyGround(localX, localY)
   }
 }
 

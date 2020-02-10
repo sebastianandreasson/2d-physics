@@ -14,6 +14,7 @@ import {
   BASELINE,
   INC,
 } from '../utils/constants'
+import { withinCircle } from '../utils/calc'
 
 const octavePerlin = (x, y, octaves = 4, persistence = 2) => {
   let total = 0
@@ -44,6 +45,7 @@ export default class World {
 
     const startX = width * offset
     const endX = startX + width
+    console.log('startX', startX)
     let xoff = startX * INC
     let yoff = startX * INC * height
 
@@ -140,5 +142,29 @@ export default class World {
       this.parts = [newPart, ...this.parts]
       return newPart
     }
+  }
+
+  destroy(x, y, radius) {
+    const container = this.parts[1].container
+    const _x = x * SIZE
+    const _y = y * SIZE
+    const _radius = radius * SIZE
+
+    console.log(_x, _y)
+
+    const remove = () => {
+      container.children.forEach(child => {
+        if (withinCircle(_x, _y, child.position.x, child.position.y, _radius)) {
+          container.removeChild(child)
+          child.destroy({ texture: true, baseTexture: true })
+        }
+      })
+    }
+
+    container.cacheAsBitmap = false
+    for (let i = 0; i < 4; i++) {
+      remove()
+    }
+    container.cacheAsBitmap = true
   }
 }

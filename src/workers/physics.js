@@ -1,4 +1,5 @@
 import { messages, simulation, types, colors, SIZE } from '../utils/constants'
+import { withinCircle } from '../utils/calc'
 
 const cache = {}
 let world = {}
@@ -44,6 +45,19 @@ const deleteObject = id => {
   const { x, y } = cache[id]
   world[x][y] = types.SPACE
   delete cache[id]
+}
+
+const destroy = ({ x, y, radius }) => {
+  for (let _x in world) {
+    for (let _y in world) {
+      if (withinCircle(x, y, _x, _y, radius)) {
+        if (world[_x][_y].type === types.WATER) {
+          displaceWater(_x, _y)
+        }
+        world[_x][_y] = { type: types.SPACE }
+      }
+    }
+  }
 }
 
 const displaceWater = (x, y, force = 2) => {
@@ -251,6 +265,9 @@ self.addEventListener('message', ({ data }) => {
       console.log('amount', Object.keys(cache).length)
       break
     case messages.OBJECT_UPDATE:
+      break
+    case messages.DESTROY:
+      destroy(payload)
       break
     case messages.SIMULATE:
       startSimulation()
