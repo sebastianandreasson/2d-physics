@@ -10,41 +10,14 @@ import {
   generation,
 } from '../utils/constants'
 import { withinCircle } from '../utils/calc'
-
-const getElevation = (x, y) => {
-  const {
-    STRENGTH,
-    ROUGHNESS,
-    PERSISTENCE,
-    LAYERS,
-    BASE_ROUGHNESS,
-    HORIZON,
-    MIN_VALUE,
-  } = generation
-
-  let noiseValue = 0
-  let frequency = BASE_ROUGHNESS
-  let amplitude = 1
-  for (let i = 0; i < LAYERS; i++) {
-    const _x = x * frequency
-    const _y = y * frequency
-    let v = noise.simplex2(_x, _y)
-
-    noiseValue += (v + 1) * 0.5 * amplitude
-
-    frequency *= ROUGHNESS
-    amplitude *= PERSISTENCE
-  }
-
-  // noiseValue = Math.min(0, noiseValue - MIN_VALUE)
-
-  return HORIZON + noiseValue * STRENGTH
-}
+import { getElevation, shouldPlantTree } from './noiseFilters'
+import Tree from './tree'
 
 export default class World {
   constructor() {
     noise.seed(SEED)
 
+    this.noiseFilters = []
     this.parts = [this.generate(-1), this.generate(0), this.generate(1)]
     this.offset = 0
   }
@@ -94,6 +67,10 @@ export default class World {
     for (let x in grid) {
       for (let y in grid[x]) {
         if (grid[x][y].type === types.GROUND) {
+          // if (grid[x][y - 1].type !== types.GROUND && shouldPlantTree(x, y)) {
+          //   const tree = new Tree(x * SIZE - offset * WIDTH, (y - 2) * SIZE)
+          //   container.addChild(tree.container)
+          // }
           const sprite = new PIXI.Sprite(texture)
           sprite.tint = colors.GREEN
           sprite.x = x * SIZE - offset * WIDTH
@@ -106,11 +83,11 @@ export default class World {
       }
     }
 
-    const outline = new PIXI.Graphics()
-    outline.lineStyle(1, colors.RED, 1)
-    outline.drawRect(0, 0, container.width, container.height)
-    outline.endFill()
-    container.addChild(outline)
+    // const outline = new PIXI.Graphics()
+    // outline.lineStyle(1, colors.RED, 1)
+    // outline.drawRect(0, 0, container.width, container.height)
+    // outline.endFill()
+    // container.addChild(outline)
 
     const gridX = Object.keys(grid)[0]
     const text = new PIXI.Text(`x: ${gridX}`)

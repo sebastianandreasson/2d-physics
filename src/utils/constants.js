@@ -18,9 +18,11 @@ export const colors = {
   WHITE: 0xffffff,
   SKY: 0x88e1f2,
   BLUE: 0x4f98ca,
+  DARK_GREEN: 0x8cba51,
   GREEN: 0x21bf73,
   GRAY: 0x434e52,
   RED: 0xff0000,
+  BROWN: 0xa35638,
 }
 export const messages = {
   INIT: 'init',

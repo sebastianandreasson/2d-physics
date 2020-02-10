@@ -84,15 +84,15 @@ const setupWorld = () => {
 }
 
 const updateWorld = x => {
-  // const part = world.updateOffset(x)
-  // if (part) {
-  //   app.stage.addChild(part.container)
-  // }
+  const part = world.updateOffset(x)
+  if (part) {
+    app.stage.addChild(part.container)
+  }
 }
 
 const createWater = (x, y) => {
   const chunk = []
-  const amount = 25
+  const amount = 10
   for (let i = 0; i < amount; i++) {
     for (let j = 0; j < amount; j++) {
       var inCircle =
