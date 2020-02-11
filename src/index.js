@@ -31,6 +31,7 @@ const setupScene = () => {
   app.renderer.backgroundColor = colors.SKY
   app.renderer.resize(WIDTH, HEIGHT)
   app.stage.vx = 0
+  app.stage.vy = 0
   document.body.appendChild(app.view)
 
   app.ticker.add(draw)
@@ -68,25 +69,43 @@ const setupScene = () => {
   right.release = () => {
     app.stage.vx = 0
   }
+  const down = keyboard('ArrowDown')
+  down.press = () => {
+    app.stage.vy = VELOCITY
+  }
+  down.release = () => {
+    app.stage.vy = 0
+  }
+  const up = keyboard('ArrowUp')
+  up.press = () => {
+    app.stage.vy = -VELOCITY
+  }
+  up.release = () => {
+    app.stage.vy = 0
+  }
 }
 
 const setupWorld = () => {
   world = new World()
   for (let i = 0; i < world.parts.length; i++) {
-    const container = world.parts[i].container
-    app.stage.addChild(container)
+    for (let j = 0; j < world.parts[i].length; j++) {
+      const container = world.parts[i][j].container
+      app.stage.addChild(container)
+    }
   }
   physicsWorker.postMessage({
     cmd: messages.INIT_WORLD,
-    payload: world.parts[1].grid,
+    payload: world.parts[1][1].grid,
   })
   app.stage.addChild(elementsContainer)
 }
 
-const updateWorld = x => {
-  const part = world.updateOffset(x)
-  if (part) {
-    app.stage.addChild(part.container)
+const updateWorld = (x, y) => {
+  const parts = world.updateOffset(x, y)
+  if (parts) {
+    parts.forEach(part => {
+      app.stage.addChild(part.container)
+    })
   }
 }
 
@@ -178,7 +197,8 @@ physicsWorker.onmessage = ({ data }) => updateScene(data)
 function draw() {
   physicsWorker.postMessage({ cmd: messages.SIMULATE })
   app.stage.x -= app.stage.vx
-  updateWorld(WIDTH + -app.stage.x)
+  app.stage.y -= app.stage.vy
+  updateWorld(WIDTH - app.stage.x, HEIGHT - app.stage.y)
 }
 setupScene()
 setupWorld()

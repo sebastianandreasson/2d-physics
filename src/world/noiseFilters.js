@@ -46,7 +46,9 @@ const initialNoiseFilter = (x, y) => {
 
 const mountainousNoiseFilter = (x, y) => {
   const settings = new NoiseSettings({
-    roughness: 0.005,
+    roughness: 0.5,
+    layers: 4,
+    persistence: 2,
   })
 
   let noiseValue = 0
@@ -72,12 +74,12 @@ const mountainousNoiseFilter = (x, y) => {
 
 const filters = [initialNoiseFilter]
 
-export const getElevation = (x, y) => {
+export const getElevation = (x, y, height) => {
   let noiseValue = 0
 
-  filters.forEach(filter => {
-    noiseValue += filter(x, y)
-  })
+  for (let i = 0; i < filters.length; i++) {
+    noiseValue += filters[i](x, y)
+  }
 
-  return HORIZON + noiseValue
+  return noiseValue * height
 }

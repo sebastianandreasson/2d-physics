@@ -1,8 +1,8 @@
-export const SEED = 1340
+export const SEED = 1339
 export const WIDTH = self.innerWidth
 export const HEIGHT = self.innerHeight
 export const GRID_SPLIT = 2
-export const SIZE = 4
+export const SIZE = 5
 export const GRID_WIDTH = Math.floor(WIDTH / GRID_SPLIT / SIZE)
 export const GRID_HEIGHT = Math.floor(HEIGHT / GRID_SPLIT / SIZE)
 export const BASELINE = Math.floor((HEIGHT / SIZE) * 0.65)
@@ -39,9 +39,9 @@ export const simulation = {
   SINGLE_STEP: false,
 }
 export const generation = {
-  HORIZON: 50,
-  STRENGTH: 75,
-  BASE_ROUGHNESS: 0.0001,
+  HORIZON: 100,
+  STRENGTH: 1.25,
+  BASE_ROUGHNESS: 0.000025,
   ROUGHNESS: 3,
   LAYERS: 4,
   PERSISTENCE: 0.25,

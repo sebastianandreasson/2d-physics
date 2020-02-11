@@ -18,25 +18,35 @@ export default class World {
     noise.seed(SEED)
 
     this.noiseFilters = []
-    this.parts = [this.generate(-1), this.generate(0), this.generate(1)]
-    this.offset = 0
+
+    this.parts = [
+      [this.generate(-1, -1), this.generate(0, -1), this.generate(1, -1)],
+      [this.generate(-1, 0), this.generate(0, 0), this.generate(1, 0)],
+      [this.generate(-1, 1), this.generate(0, 1), this.generate(1, 1)],
+    ]
+    this.xOffset = 1
+    this.yOffset = 1
   }
 
-  generate(offset) {
+  generate(xOffset, yOffset) {
     const width = Math.floor(WIDTH / SIZE)
     const height = Math.floor(HEIGHT / SIZE)
     const grid = {}
 
-    const startX = width * offset
+    const startX = width * xOffset
     const endX = startX + width
-    console.log('startX', startX)
+
+    const startY = yOffset * height
+    const endY = startY + height
+
+    console.log('startX', startX, startY)
     let yoff = startX * height
 
     for (let x = startX; x < endX; x++) {
-      const startY = getElevation(x, yoff)
+      const elevation = getElevation(x, yoff, height)
       grid[x] = {}
-      for (let y = height; y > 0; y--) {
-        if (y < startY) {
+      for (let y = startY; y <= endY; y++) {
+        if (y < elevation) {
           grid[x][y] = {
             type: types.SPACE,
           }
@@ -50,16 +60,17 @@ export default class World {
     }
 
     return {
-      offset,
+      xOffset,
+      yOffset,
       grid,
-      container: this.generateContainer(grid, offset),
+      container: this.generateContainer(grid, xOffset, yOffset),
     }
   }
 
-  generateContainer(grid, offset) {
+  generateContainer(grid, xOffset, yOffset) {
     const container = new PIXI.Container()
-    container.x = offset * WIDTH
-    container.y = 0
+    container.x = xOffset * WIDTH
+    container.y = yOffset * HEIGHT
     container.width = WIDTH
     container.height = HEIGHT
     const texture = PIXI.Texture.WHITE
@@ -67,14 +78,10 @@ export default class World {
     for (let x in grid) {
       for (let y in grid[x]) {
         if (grid[x][y].type === types.GROUND) {
-          // if (grid[x][y - 1].type !== types.GROUND && shouldPlantTree(x, y)) {
-          //   const tree = new Tree(x * SIZE - offset * WIDTH, (y - 2) * SIZE)
-          //   container.addChild(tree.container)
-          // }
           const sprite = new PIXI.Sprite(texture)
           sprite.tint = colors.GREEN
-          sprite.x = x * SIZE - offset * WIDTH
-          sprite.y = y * SIZE
+          sprite.x = x * SIZE - xOffset * WIDTH
+          sprite.y = y * SIZE - yOffset * HEIGHT
           sprite.width = SIZE
           sprite.height = SIZE
 
@@ -101,37 +108,62 @@ export default class World {
     return container
   }
 
-  updateOffset(x) {
-    const newOffset = Math.floor(x / WIDTH)
-    if (newOffset > this.offset) {
-      this.offset = newOffset
-      const oldPart = this.parts.shift()
-      oldPart.container.parent.removeChild(oldPart.container)
-      oldPart.container.destroy({
+  removeParts(parts) {
+    parts.forEach(part => {
+      part.container.parent.removeChild(part.container)
+      part.container.destroy({
         children: true,
         texture: true,
         baseTexture: true,
       })
-      const newPart = this.generate(this.offset)
-      this.parts = [...this.parts, newPart]
-      return newPart
-    } else if (newOffset < this.offset) {
-      this.offset = newOffset
-      const oldPart = this.parts.pop()
-      oldPart.container.parent.removeChild(oldPart.container)
-      oldPart.container.destroy({
-        children: true,
-        texture: true,
-        baseTexture: true,
-      })
-      const newPart = this.generate(this.offset - 1)
-      this.parts = [newPart, ...this.parts]
-      return newPart
+    })
+  }
+
+  updateOffset(x, y) {
+    const newXOffset = Math.floor(x / WIDTH)
+    const newYOffset = Math.floor(y / HEIGHT / 2)
+
+    if (newXOffset > this.xOffset) {
+      this.xOffset = newXOffset
+      this.removeParts([
+        this.parts[0].shift(),
+        this.parts[1].shift(),
+        this.parts[2].shift(),
+      ])
+      const newParts = [
+        this.generate(this.xOffset, this.yOffset - 1),
+        this.generate(this.xOffset, this.yOffset),
+        this.generate(this.xOffset, this.yOffset + 1),
+      ]
+      this.parts = [
+        [...this.parts[0], newParts[0]],
+        [...this.parts[1], newParts[1]],
+        [...this.parts[2], newParts[2]],
+      ]
+      return newParts
+    } else if (newXOffset < this.xOffset) {
+      this.xOffset = newXOffset
+      this.removeParts([
+        this.parts[0].pop(),
+        this.parts[1].pop(),
+        this.parts[2].pop(),
+      ])
+      const newParts = [
+        this.generate(this.xOffset, this.yOffset - 1),
+        this.generate(this.xOffset, this.yOffset),
+        this.generate(this.xOffset, this.yOffset + 1),
+      ]
+      this.parts = [
+        [newParts[0], ...this.parts[0]],
+        [newParts[1], ...this.parts[1]],
+        [newParts[2], ...this.parts[2]],
+      ]
+      return newParts
     }
   }
 
   destroy(x, y, radius) {
-    const container = this.parts[1].container
+    const container = this.parts[1][1].container
     const _x = x * SIZE
     const _y = y * SIZE
     const _radius = radius * SIZE
