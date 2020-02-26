@@ -1,3 +1,4 @@
+const webpack = require('webpack')
 const path = require('path')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
@@ -12,6 +13,9 @@ module.exports = {
     new HtmlWebpackPlugin({
       title: 'Development',
       template: 'src/index.html',
+    }),
+    new webpack.ProvidePlugin({
+      PIXI: 'pixi.js',
     }),
   ],
   module: {

@@ -10,7 +10,7 @@ import {
   generation,
 } from '../utils/constants'
 import { withinCircle } from '../utils/calc'
-import { getElevation, shouldPlantTree } from './noiseFilters'
+import { getElevation, shouldPlantTree, groundType } from './noiseFilters'
 import Tree from './tree'
 
 export default class World {
@@ -19,6 +19,7 @@ export default class World {
 
     this.noiseFilters = []
 
+    this.part = this.generate(0, 0)
     this.parts = [
       [this.generate(-1, -1), this.generate(0, -1), this.generate(1, -1)],
       [this.generate(-1, 0), this.generate(0, 0), this.generate(1, 0)],
@@ -79,7 +80,20 @@ export default class World {
       for (let y in grid[x]) {
         if (grid[x][y].type === types.GROUND) {
           const sprite = new PIXI.Sprite(texture)
-          sprite.tint = colors.GREEN
+          sprite.tint = groundType(x, y) === 0 ? colors.GREEN : colors.DIRT
+          if (groundType(x, y) === 0) {
+          }
+          // const randOff = Math.floor(Math.random() * (12 - 1 + 1)) + 1
+          // if (grid[x][y - 3] && grid[x][y - 3].type === types.SPACE) {
+          //   sprite.tint = colors.GREEN
+          // } else if (
+          //   grid[x][y - randOff] &&
+          //   grid[x][y - randOff].type === types.SPACE
+          // ) {
+          //   sprite.tint = colors.GREEN
+          // } else {
+          //   sprite.tint = colors.DIRT
+          // }
           sprite.x = x * SIZE - xOffset * WIDTH
           sprite.y = y * SIZE - yOffset * HEIGHT
           sprite.width = SIZE
@@ -97,7 +111,8 @@ export default class World {
     // container.addChild(outline)
 
     const gridX = Object.keys(grid)[0]
-    const text = new PIXI.Text(`x: ${gridX}`)
+    const gridY = Object.keys(grid[gridX])[0]
+    const text = new PIXI.Text(`x: ${gridX}, y: ${gridY}`)
     text.x = 10
     text.y = 10
     container.addChild(text)
@@ -163,7 +178,8 @@ export default class World {
   }
 
   destroy(x, y, radius) {
-    const container = this.parts[1][1].container
+    // const container = this.parts[1][1].container
+    const container = this.part.container
     const _x = x * SIZE
     const _y = y * SIZE
     const _radius = radius * SIZE

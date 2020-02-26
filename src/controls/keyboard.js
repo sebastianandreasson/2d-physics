@@ -40,3 +40,16 @@ export default function keyboard(value) {
 
   return key
 }
+
+export const keys = {}
+
+export const keyPress = (name, callback) => {
+  const on = keyboard(name)
+  on.press = () => {
+    keys[name.toLowerCase()] = true
+    if (callback) callback()
+  }
+  on.release = () => {
+    keys[name.toLowerCase()] = false
+  }
+}

@@ -23,6 +23,7 @@ export const colors = {
   GRAY: 0x434e52,
   RED: 0xff0000,
   BROWN: 0xa35638,
+  DIRT: 0xcfb495,
 }
 export const messages = {
   INIT: 'init',
@@ -35,7 +36,7 @@ export const messages = {
 export const simulation = {
   FIXED_TIMESTEP: 1 / 60,
   MAX_STEPS: 10,
-  REPORT_CHUNK_SIZE: 4,
+  REPORT_CHUNK_SIZE: 5,
   SINGLE_STEP: false,
 }
 export const generation = {

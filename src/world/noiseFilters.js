@@ -20,8 +20,14 @@ class NoiseSettings {
   }
 }
 
+console.log(noise.simplex2(0, 50), noise.simplex2(0, 51), noise.simplex2(0, 52))
+
 export const shouldPlantTree = (x, y) => {
   return noise.simplex2(x * SIZE, y * SIZE) > 0.5
+}
+
+export const groundType = (x, y) => {
+  return Math.abs(noise.simplex2(x, y)) > 0.1 ? 0 : 1
 }
 
 const initialNoiseFilter = (x, y) => {

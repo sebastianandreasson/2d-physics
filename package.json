@@ -10,6 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "pixi-layers": "^0.2.3",
+    "pixi-viewport": "^4.10.0",
     "pixi.js": "^5.2.1"
   },
   "devDependencies": {

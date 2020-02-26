@@ -1,25 +1,24 @@
 import * as PIXI from 'pixi.js'
+import 'pixi-layers'
+import { Viewport } from 'pixi-viewport'
 import World from './world'
 import Water from './elements/water'
 import Solid from './elements/solid'
-import keyboard from './controls/keyboard'
+import { keys, keyPress } from './controls/keyboard'
+import { withinCircle } from './utils/calc'
+// import cameraControls from './controls/cameraMove'
 import PhysicsWorker from 'worker-loader!./workers/physics.js'
 import {
-  types,
   colors,
   WIDTH,
   HEIGHT,
   SIZE,
-  VELOCITY,
   messages,
   simulation,
 } from './utils/constants'
 
-let keys = {
-  shift: false,
-  alt: false,
-}
 let world
+let viewport
 let objects = {}
 let app
 
@@ -28,97 +27,90 @@ const elementsContainer = new PIXI.ParticleContainer(25000, { tint: true })
 
 const setupScene = () => {
   app = new PIXI.Application()
+  app.stage = new PIXI.display.Stage()
   app.renderer.backgroundColor = colors.SKY
   app.renderer.resize(WIDTH, HEIGHT)
-  app.stage.vx = 0
-  app.stage.vy = 0
+
+  viewport = new Viewport({
+    screenWidth: window.innerWidth,
+    screenHeight: window.innerHeight,
+    worldWidth: 1000,
+    worldHeight: 1000,
+
+    interaction: app.renderer.plugins.interaction, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+  })
+
+  app.stage.addChild(viewport)
+
+  // activate plugins
+  viewport
+    .drag()
+    .pinch()
+    .wheel()
+    .decelerate()
+
+  // app.stage.controls = cameraControls()
   document.body.appendChild(app.view)
+
+  // const lighting = new PIXI.display.Layer()
+  // lighting.on('display', element => {
+  //   element.blendMode = PIXI.BLEND_MODES.ADD
+  // })
+  // lighting.useRenderTexture = true
+  // lighting.clearColor = [0.078, 0.16, 0.32, 0.5] // ambient blue
+  // app.stage.addChild(lighting)
+
+  // const lightingSprite = new PIXI.Sprite(lighting.getRenderTexture())
+  // lightingSprite.blendMode = PIXI.BLEND_MODES.MULTIPLY
+
+  // app.stage.addChild(lightingSprite)
 
   app.ticker.add(draw)
 
   app.renderer.plugins.interaction.on('pointerup', onClick)
 
-  const shift = keyboard('Shift')
-  shift.press = () => {
-    keys.shift = true
-  }
-  shift.release = () => {
-    keys.shift = false
-  }
-  const alt = keyboard('Alt')
-  alt.press = () => {
-    keys.alt = true
-  }
-  alt.release = () => {
-    keys.alt = false
-  }
-  const space = keyboard(' ')
-  space.press = () => physicsWorker.postMessage({ cmd: messages.SIMULATE })
-
-  const left = keyboard('ArrowLeft')
-  left.press = () => {
-    app.stage.vx = -VELOCITY
-  }
-  left.release = () => {
-    app.stage.vx = 0
-  }
-  const right = keyboard('ArrowRight')
-  right.press = () => {
-    app.stage.vx = VELOCITY
-  }
-  right.release = () => {
-    app.stage.vx = 0
-  }
-  const down = keyboard('ArrowDown')
-  down.press = () => {
-    app.stage.vy = VELOCITY
-  }
-  down.release = () => {
-    app.stage.vy = 0
-  }
-  const up = keyboard('ArrowUp')
-  up.press = () => {
-    app.stage.vy = -VELOCITY
-  }
-  up.release = () => {
-    app.stage.vy = 0
-  }
+  keyPress('Shift')
+  keyPress('Alt')
+  keyPress(' ', () => {
+    physicsWorker.postMessage({ cmd: messages.SIMULATE })
+  })
 }
 
 const setupWorld = () => {
   world = new World()
-  for (let i = 0; i < world.parts.length; i++) {
-    for (let j = 0; j < world.parts[i].length; j++) {
-      const container = world.parts[i][j].container
-      app.stage.addChild(container)
-    }
-  }
+
+  // for (let i = 0; i < world.parts.length; i++) {
+  //   for (let j = 0; j < world.parts[i].length; j++) {
+  //     const container = world.parts[i][j].container
+  //     viewport.addChild(container)
+  //   }
+  // }
+  // physicsWorker.postMessage({
+  //   cmd: messages.INIT_WORLD,
+  //   payload: world.parts[1][1].grid,
+  // })
+  viewport.addChild(world.part.container)
   physicsWorker.postMessage({
     cmd: messages.INIT_WORLD,
-    payload: world.parts[1][1].grid,
+    payload: world.part.grid,
   })
-  app.stage.addChild(elementsContainer)
+  viewport.addChild(elementsContainer)
 }
 
 const updateWorld = (x, y) => {
-  const parts = world.updateOffset(x, y)
-  if (parts) {
-    parts.forEach(part => {
-      app.stage.addChild(part.container)
-    })
-  }
+  // const parts = world.updateOffset(x, y)
+  // if (parts) {
+  //   parts.forEach(part => {
+  //     app.stage.addChild(part.container)
+  //   })
+  // }
 }
 
-const createWater = (x, y) => {
+const createWater = (x, y, amount = 10) => {
   const chunk = []
-  const amount = 10
   for (let i = 0; i < amount; i++) {
     for (let j = 0; j < amount; j++) {
-      var inCircle =
-        (i - amount / 2) * (i - amount / 2) +
-          (j - amount / 2) * (j - amount / 2) <=
-        (amount / 2) * (amount / 2)
-      if (inCircle) {
+      if (withinCircle(i, j, amount / 2, amount / 2, amount / 2)) {
         const water = new Water((x + i) * SIZE, (y + j) * SIZE)
         objects[water.id] = water
         elementsContainer.addChild(water.sprite)
@@ -130,6 +122,12 @@ const createWater = (x, y) => {
     cmd: messages.OBJECT_CREATE,
     payload: chunk,
   })
+}
+
+const createWaterfall = (x, y) => {
+  setInterval(() => {
+    createWater(x, y, 3)
+  }, 25)
 }
 
 const createSolid = (x, y) => {
@@ -177,6 +175,7 @@ const updateScene = arr => {
   for (let i = 0; i < arr[0]; i++) {
     const id = arr[offset]
     const obj = objects[id]
+
     const x = arr[offset + 1]
     const y = arr[offset + 2]
     obj.sprite.position.set(x, y, 0)
@@ -196,9 +195,9 @@ physicsWorker.onmessage = ({ data }) => updateScene(data)
 
 function draw() {
   physicsWorker.postMessage({ cmd: messages.SIMULATE })
-  app.stage.x -= app.stage.vx
-  app.stage.y -= app.stage.vy
-  updateWorld(WIDTH - app.stage.x, HEIGHT - app.stage.y)
+  // app.stage.x -= app.stage.controls.vx
+  // app.stage.y -= app.stage.controls.vy
+  // updateWorld(WIDTH - app.stage.x, HEIGHT - app.stage.y)
 }
 setupScene()
 setupWorld()

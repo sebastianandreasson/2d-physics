@@ -23,6 +23,7 @@ const createObject = obj => {
     ...obj,
     ...{ x, y },
     velocity: 0,
+    remove: 0,
   }
   if (obj.size === 1) {
     world[x][y] = {
@@ -205,6 +206,7 @@ const report = () => {
     data[offset + 1] = obj.x * SIZE
     data[offset + 2] = obj.y * SIZE
     data[offset + 3] = obj.alpha
+    data[offset + 4] = obj.remove
 
     offset += simulation.REPORT_CHUNK_SIZE
   }
@@ -262,7 +264,6 @@ self.addEventListener('message', ({ data }) => {
         createObject(payload)
       }
       creating = false
-      console.log('amount', Object.keys(cache).length)
       break
     case messages.OBJECT_UPDATE:
       break
