@@ -6,7 +6,7 @@ import Water from './elements/water'
 import Solid from './elements/solid'
 import { keys, keyPress } from './controls/keyboard'
 import { withinCircle } from './utils/calc'
-// import cameraControls from './controls/cameraMove'
+import cameraControls from './controls/cameraMove'
 import PhysicsWorker from 'worker-loader!./workers/physics.js'
 import {
   colors,
@@ -19,6 +19,7 @@ import {
 
 let world
 let viewport
+let playerViewport
 let objects = {}
 let app
 
@@ -29,18 +30,29 @@ const setupScene = () => {
   app = new PIXI.Application()
   app.stage = new PIXI.display.Stage()
   app.renderer.backgroundColor = colors.SKY
-  app.renderer.resize(WIDTH, HEIGHT)
+  app.renderer.resize(window.innerWidth, window.innerHeight)
 
   viewport = new Viewport({
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
-    worldWidth: 1000,
-    worldHeight: 1000,
-
-    interaction: app.renderer.plugins.interaction, // the interaction module is important for wheel to work properly when renderer.view is placed or scaled
+    interaction: app.renderer.plugins.interaction,
   })
 
+  playerViewport = new Viewport({
+    screenWidth: WIDTH,
+    screenHeight: HEIGHT,
+    interaction: app.renderer.plugins.interaction,
+  })
+  const outline = new PIXI.Graphics()
+  outline.lineStyle(1, colors.BLACK, 1)
+  outline.drawRect(0, 0, WIDTH, HEIGHT)
+  outline.endFill()
+  playerViewport.addChild(outline)
+  playerViewport.zIndex = 10
+  playerViewport.controls = cameraControls()
+
   app.stage.addChild(viewport)
+  viewport.addChild(playerViewport)
 
   // activate plugins
   viewport
@@ -49,7 +61,7 @@ const setupScene = () => {
     .wheel()
     .decelerate()
 
-  // app.stage.controls = cameraControls()
+  viewport.follow(playerViewport)
   document.body.appendChild(app.view)
 
   // const lighting = new PIXI.display.Layer()
@@ -79,31 +91,26 @@ const setupScene = () => {
 const setupWorld = () => {
   world = new World()
 
-  // for (let i = 0; i < world.parts.length; i++) {
-  //   for (let j = 0; j < world.parts[i].length; j++) {
-  //     const container = world.parts[i][j].container
-  //     viewport.addChild(container)
-  //   }
-  // }
-  // physicsWorker.postMessage({
-  //   cmd: messages.INIT_WORLD,
-  //   payload: world.parts[1][1].grid,
-  // })
-  viewport.addChild(world.part.container)
+  for (let i = 0; i < world.parts.length; i++) {
+    for (let j = 0; j < world.parts[i].length; j++) {
+      const container = world.parts[i][j].container
+      viewport.addChild(container)
+    }
+  }
   physicsWorker.postMessage({
     cmd: messages.INIT_WORLD,
-    payload: world.part.grid,
+    payload: world.parts[1][1].grid,
   })
   viewport.addChild(elementsContainer)
 }
 
 const updateWorld = (x, y) => {
-  // const parts = world.updateOffset(x, y)
-  // if (parts) {
-  //   parts.forEach(part => {
-  //     app.stage.addChild(part.container)
-  //   })
-  // }
+  const parts = world.updateOffset(x, y)
+  if (parts) {
+    parts.forEach(part => {
+      viewport.addChild(part.container)
+    })
+  }
 }
 
 const createWater = (x, y, amount = 10) => {
@@ -194,10 +201,10 @@ const updateScene = arr => {
 physicsWorker.onmessage = ({ data }) => updateScene(data)
 
 function draw() {
-  physicsWorker.postMessage({ cmd: messages.SIMULATE })
-  // app.stage.x -= app.stage.controls.vx
-  // app.stage.y -= app.stage.controls.vy
-  // updateWorld(WIDTH - app.stage.x, HEIGHT - app.stage.y)
+  // physicsWorker.postMessage({ cmd: messages.SIMULATE })
+  playerViewport.x += playerViewport.controls.vx
+  playerViewport.y += playerViewport.controls.vy
+  updateWorld(playerViewport.x, HEIGHT + playerViewport.y)
 }
 setupScene()
 setupWorld()
